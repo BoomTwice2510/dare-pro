@@ -1,0 +1,40 @@
+export const glassStyles = {
+  glass: {
+    backdropFilter: 'blur(12px)',
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    border: '1px solid rgba(255, 255, 255, 0.1)',
+    borderRadius: '1rem',
+  },
+  glassLight: {
+    backdropFilter: 'blur(8px)',
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    border: '1px solid rgba(255, 255, 255, 0.15)',
+  },
+  glassGold: {
+    backdropFilter: 'blur(12px)',
+    background: 'linear-gradient(135deg, rgba(212, 175, 55, 0.1), rgba(212, 175, 55, 0.05))',
+    border: '1px solid rgba(212, 175, 55, 0.2)',
+    boxShadow: '0 4px 6px rgba(212, 175, 55, 0.1)',
+  },
+  btnGlass: {
+    backdropFilter: 'blur(12px)',
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    border: '1px solid rgba(255, 255, 255, 0.1)',
+    padding: '0.75rem 1.5rem',
+    borderRadius: '0.5rem',
+    fontWeight: 500,
+    transition: 'all 0.3s ease',
+    color: 'white',
+    cursor: 'pointer',
+  },
+  btnGold: {
+    padding: '0.75rem 1.5rem',
+    fontWeight: 500,
+    borderRadius: '0.75rem',
+    transition: 'all 0.3s ease',
+    background: 'linear-gradient(to right, #d4af37, #e6c547)',
+    color: '#0a0e27',
+    border: 'none',
+    cursor: 'pointer',
+  },
+} as const;

@@ -11,6 +11,7 @@ function parseDareResponse(index: number, data: any): Dare {
     throw new Error(`Invalid dare response for index ${index}`);
   }
 
+  // 🔥 NEW SHAPE (MATCHES CONTRACT getDare)
   const [
     creator,
     accepter,
@@ -19,14 +20,14 @@ function parseDareResponse(index: number, data: any): Dare {
     stake,
     createdAt,
     deadline,
-    accepted,
     proofSubmitted,
     proofURI,
     proofTime,
-    resolved,
+    disputeTime,
     status,
   ] = data;
 
+  // Minimal sanity check
   if (!creator || stake === undefined || status === undefined) {
     throw new Error(`Incomplete dare data for index ${index}`);
   }
@@ -40,11 +41,13 @@ function parseDareResponse(index: number, data: any): Dare {
     stake: stake as bigint,
     createdAt: Number(createdAt) * 1000,
     deadline: Number(deadline) * 1000,
-    accepted: accepted as boolean,
+
+    // updated fields
     proofSubmitted: proofSubmitted as boolean,
     proofURI: proofURI as string,
     proofTime: Number(proofTime) * 1000,
-    resolved: resolved as boolean,
+    disputeTime: Number(disputeTime) * 1000,
+
     status: Number(status) as DareStatus,
   };
 }
@@ -68,17 +71,12 @@ export function useDares(options?: UseDaresOptions) {
     query: { enabled: true },
   });
 
-  // Build contracts array for multiread
+  // Build contracts array for multicall
   const contracts = useMemo(() => {
-    if (!dareCount) {
-      return [];
-    }
+    if (!dareCount) return [];
 
     const count = Number(dareCount);
-
-    if (count === 0) {
-      return [];
-    }
+    if (count === 0) return [];
 
     return Array.from({ length: count }, (_, i) => ({
       address: DARE_CONTRACT_ADDRESS,
@@ -88,13 +86,18 @@ export function useDares(options?: UseDaresOptions) {
     }));
   }, [dareCount]);
 
-  // Read all dares using multicall
-  const { data: rawDares, isLoading, isError, error: readError } = useReadContracts({
+  // Read all dares
+  const {
+    data: rawDares,
+    isLoading,
+    isError,
+    error: readError,
+  } = useReadContracts({
     contracts,
     query: { enabled: contracts.length > 0 },
   });
 
-  // Parse the raw responses into Dare objects
+  // Parse results
   const allDares = useMemo(() => {
     if (!rawDares || rawDares.length === 0) {
       return [];
@@ -116,38 +119,48 @@ export function useDares(options?: UseDaresOptions) {
     return daresList;
   }, [rawDares]);
 
-  // Apply filters
+  // Filters
   const filteredDares = useMemo(() => {
     let results = allDares;
 
     if (options?.filterCreator) {
       results = results.filter(
-        (dare) => dare.creator.toLowerCase() === options.filterCreator!.toLowerCase()
+        (dare) =>
+          dare.creator.toLowerCase() === options.filterCreator!.toLowerCase()
       );
     }
 
     if (options?.filterAccepter) {
       results = results.filter(
-        (dare) => dare.accepter.toLowerCase() === options.filterAccepter!.toLowerCase()
+        (dare) =>
+          dare.accepter.toLowerCase() === options.filterAccepter!.toLowerCase()
       );
     }
 
     if (options?.filterStatus !== undefined) {
-      results = results.filter((dare) => dare.status === options.filterStatus);
+      results = results.filter(
+        (dare) => dare.status === options.filterStatus
+      );
     }
 
     return results;
-  }, [allDares, options?.filterCreator, options?.filterAccepter, options?.filterStatus]);
+  }, [
+    allDares,
+    options?.filterCreator,
+    options?.filterAccepter,
+    options?.filterStatus,
+  ]);
 
-  const loading = dareCount === undefined || (contracts.length > 0 && rawDares === undefined);
-  const hasError = isError;
+  const loading =
+    dareCount === undefined ||
+    (contracts.length > 0 && rawDares === undefined);
 
   return {
     allDares,
     filteredDares,
     dareCount: Number(dareCount || 0),
-    loading,
-    hasError,
+    loading: loading || isLoading,
+    hasError: isError,
     error: readError?.message || '',
   };
 }

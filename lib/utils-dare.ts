@@ -17,7 +17,6 @@ export function formatTime(timestamp: number): string {
 }
 
 export function getRelativeTime(timestamp: number): string {
-  // Handle both milliseconds and seconds
   const now = Date.now();
   const ms = timestamp > 1000000000000 ? timestamp : timestamp * 1000;
   const diffMs = ms - now;
@@ -61,30 +60,67 @@ export function getDareActions(dare: Dare, walletAddress: string | undefined) {
   const isCreator = dare.creator.toLowerCase() === walletAddress.toLowerCase();
   const isAccepter = dare.accepter.toLowerCase() === walletAddress.toLowerCase();
 
+  const now = Math.floor(Date.now() / 1000);
+  const isExpired = now > dare.deadline;
+  const isZeroAccepter =
+    dare.accepter === '0x0000000000000000000000000000000000000000';
+
   const actions: {
     id: string;
     label: string;
     color: 'default' | 'success' | 'warning' | 'destructive';
   }[] = [];
 
-  // Open state - creator can cancel, others can accept
+  /* ======================
+     OPEN STATE (FIXED)
+  ====================== */
+
   if (dare.status === DareStatus.Open) {
     if (isCreator) {
-      actions.push({ id: 'cancel', label: 'Cancel Dare', color: 'destructive' });
+      // ✅ deadline ke baad + no accepter → reclaim
+      if (isExpired && isZeroAccepter) {
+        actions.push({
+          id: 'reclaim',
+          label: 'Reclaim Stake',
+          color: 'success',
+        });
+      } else {
+        actions.push({
+          id: 'cancel',
+          label: 'Cancel Dare',
+          color: 'destructive',
+        });
+      }
     } else {
-      actions.push({ id: 'accept', label: 'Accept Dare', color: 'success' });
+      // ❌ accept sirf deadline se pehle
+      if (!isExpired) {
+        actions.push({
+          id: 'accept',
+          label: 'Accept Dare',
+          color: 'success',
+        });
+      }
     }
   }
 
-  // Running state - accepter can submit proof after deadline
+  /* ======================
+     RUNNING STATE
+  ====================== */
+
   if (dare.status === DareStatus.Running && isAccepter) {
-    const now = Math.floor(Date.now() / 1000);
     if (now >= dare.deadline) {
-      actions.push({ id: 'submit-proof', label: 'Submit Proof', color: 'default' });
+      actions.push({
+        id: 'submit-proof',
+        label: 'Submit Proof',
+        color: 'default',
+      });
     }
   }
 
-  // Proof submitted - creator can approve or dispute
+  /* ======================
+     PROOF SUBMITTED
+  ====================== */
+
   if (dare.status === DareStatus.ProofSubmitted && isCreator) {
     actions.push(
       { id: 'approve-proof', label: 'Approve Proof', color: 'success' },
@@ -92,12 +128,14 @@ export function getDareActions(dare: Dare, walletAddress: string | undefined) {
     );
   }
 
-  // Proof submitted - anyone can trigger auto-resolve after confirm window
   if (dare.status === DareStatus.ProofSubmitted) {
-    const now = Math.floor(Date.now() / 1000);
-    const confirmWindow = 24 * 60 * 60; // 24 hours
+    const confirmWindow = 24 * 60 * 60;
     if (now > dare.proofTime + confirmWindow) {
-      actions.push({ id: 'auto-resolve', label: 'Auto Resolve', color: 'default' });
+      actions.push({
+        id: 'auto-resolve',
+        label: 'Auto Resolve',
+        color: 'default',
+      });
     }
   }
 

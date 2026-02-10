@@ -8,7 +8,6 @@ import {
   formatTime,
   getRelativeTime,
   getTokenSymbol,
-  getDareActions,
   isTokenETH,
 } from '@/lib/utils-dare';
 import { useAccount, useWriteContract } from 'wagmi';
@@ -84,19 +83,24 @@ export function DareCard({
   isLoading = false,
   onTransactionComplete,
 }: DareCardProps) {
-  const { address, isConnected } = useAccount();
+  const { address } = useAccount();
   const [showProofModal, setShowProofModal] = useState(false);
-  const [txError, setTxError] = useState('');
   const [isPending, setIsPending] = useState(false);
   const { writeContractAsync } = useWriteContract();
 
   const status = STATUS_UI[dare.status];
 
-  const isCreator = address && dare.creator.toLowerCase() === address.toLowerCase();
-  const isAccepter = address && dare.accepter.toLowerCase() === address.toLowerCase();
+  const isCreator =
+    address && dare.creator.toLowerCase() === address.toLowerCase();
+  const isAccepter =
+    address && dare.accepter.toLowerCase() === address.toLowerCase();
+
   const isOpen = dare.status === DareStatus.Open;
   const isZeroAccepter =
     dare.accepter === '0x0000000000000000000000000000000000000000';
+
+  const now = Math.floor(Date.now() / 1000);
+  const isDeadlinePassed = now > dare.deadline;
 
   const glassLightStyle = {
     backdropFilter: 'blur(8px)',
@@ -122,7 +126,6 @@ export function DareCard({
           </h3>
         </div>
 
-        {/* 🔥 STATUS BADGE */}
         <div className="text-right">
           <span
             className={`px-4 py-1.5 rounded-full text-xs font-extrabold tracking-widest uppercase ${
@@ -161,7 +164,9 @@ export function DareCard({
       <div className="grid grid-cols-2 gap-3 text-xs">
         <div className="rounded-lg px-3 py-2" style={glassLightStyle}>
           <p className="text-white/60">Creator</p>
-          <p className="text-white font-mono">{formatAddress(dare.creator, 6)}</p>
+          <p className="text-white font-mono">
+            {formatAddress(dare.creator, 6)}
+          </p>
         </div>
         <div className="rounded-lg px-3 py-2" style={glassLightStyle}>
           <p className="text-white/60">Accepter</p>
@@ -176,18 +181,23 @@ export function DareCard({
         <div className="rounded-lg px-3 py-2" style={glassLightStyle}>
           <p className="text-white/60">Created</p>
           <p className="text-white">{formatTime(dare.createdAt)}</p>
-          <p className="text-white/40">{getRelativeTime(dare.createdAt)}</p>
+          <p className="text-white/40">
+            {getRelativeTime(dare.createdAt)}
+          </p>
         </div>
         <div className="rounded-lg px-3 py-2" style={glassLightStyle}>
           <p className="text-white/60">Deadline</p>
           <p className="text-white">{formatTime(dare.deadline)}</p>
-          <p className="text-white/40">{getRelativeTime(dare.deadline)}</p>
+          <p className="text-white/40">
+            {getRelativeTime(dare.deadline)}
+          </p>
         </div>
       </div>
 
       {/* ACTIONS */}
       <div className="pt-4 border-t border-white/10 flex flex-wrap gap-2">
-        {isOpen && isZeroAccepter && !isCreator && (
+        {/* ACCEPT (only before deadline) */}
+        {isOpen && isZeroAccepter && !isCreator && !isDeadlinePassed && (
           <button
             onClick={async () => {
               setIsPending(true);
@@ -208,28 +218,50 @@ export function DareCard({
           </button>
         )}
 
-        {dare.status === DareStatus.Running && isAccepter && (
+        {/* RECLAIM (creator + deadline passed + no accepter) */}
+        {isOpen && isZeroAccepter && isCreator && isDeadlinePassed && (
           <button
-            onClick={() => setShowProofModal(true)}
+            onClick={async () => {
+              setIsPending(true);
+              await writeContractAsync({
+                address: DARE_CONTRACT_ADDRESS,
+                abi: DARE_CONTRACT_ABI,
+                functionName: 'reclaimUnacceptedDare',
+                args: [BigInt(dare.id)],
+              });
+              setIsPending(false);
+              onTransactionComplete?.(); // optimistic refresh
+            }}
             style={glassStyles.btnGold}
             className="px-4 py-1.5 text-sm rounded-lg"
           >
-            Submit Proof
+            Reclaim Stake
           </button>
         )}
-      </div>
 
-      {txError && <div className="text-xs text-red-400">{txError}</div>}
+        {/* SUBMIT PROOF */}
+{dare.status === DareStatus.Running &&
+  isAccepter &&
+  isDeadlinePassed && (
+    <button
+      onClick={() => setShowProofModal(true)}
+      style={glassStyles.btnGold}
+      className="px-4 py-1.5 text-sm rounded-lg"
+    >
+      Submit Proof
+    </button>
+)}
+</div>
 
-      {showProofModal && (
-        <ProofSubmissionModal
-          dare={dare}
-          proofType="LINK"
-          onClose={() => setShowProofModal(false)}
-          onSubmit={() => setShowProofModal(false)}
-          onTransactionComplete={onTransactionComplete}
-        />
-      )}
-    </div>
-  );
+{showProofModal && (
+  <ProofSubmissionModal
+    dare={dare}
+    proofType="LINK"
+    onClose={() => setShowProofModal(false)}
+    onSubmit={() => setShowProofModal(false)}
+    onTransactionComplete={onTransactionComplete}
+  />
+)}
+</div>
+);
 }

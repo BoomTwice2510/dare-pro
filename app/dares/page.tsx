@@ -18,43 +18,44 @@ function parseDareResponse(index: number, data: any): Dare {
     throw new Error(`Invalid dare response for index ${index}`);
   }
 
-  const [
-    creator,
-    accepter,
-    description,
-    token,
-    stake,
-    createdAt,
-    deadline,
-    accepted,
-    proofSubmitted,
-    proofURI,
-    proofTime,
-    resolved,
-    status,
-  ] = data;
+const [
+  creator,
+  accepter,
+  description,
+  token,
+  stake,
+  createdAt,
+  deadline,
+  proofSubmitted,
+  proofURI,
+  proofTime,
+  disputeTime,
+  status,
+] = data;
 
-  // Guard against undefined values
-  if (!creator || stake === undefined || status === undefined) {
-    throw new Error(`Incomplete dare data for index ${index}`);
-  }
+if (
+  !creator ||
+  stake === undefined ||
+  status === undefined
+) {
+  throw new Error(`Incomplete dare data for index ${index}`);
+}
 
-  return {
-    id: index,
-    creator: creator as string,
-    accepter: accepter as string,
-    description: description as string,
-    token: token as string,
-    stake: stake as bigint,
-    createdAt: Number(createdAt) * 1000, // Convert unix timestamp to ms
-    deadline: Number(deadline) * 1000,
-    accepted: accepted as boolean,
-    proofSubmitted: proofSubmitted as boolean,
-    proofURI: proofURI as string,
-    proofTime: Number(proofTime) * 1000,
-    resolved: resolved as boolean,
-    status: Number(status) as DareStatus,
-  };
+return {
+  id: index,
+  creator,
+  accepter,
+  description,
+  token,
+  stake,
+  createdAt: Number(createdAt) * 1000,
+  deadline: Number(deadline) * 1000,
+  proofSubmitted,
+  proofURI,
+  proofTime: Number(proofTime) * 1000,
+  disputeTime: Number(disputeTime) * 1000,
+  status: Number(status),
+};
 }
 
 export default function DaresPage() {

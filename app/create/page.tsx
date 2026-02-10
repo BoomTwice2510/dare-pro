@@ -2,7 +2,7 @@
 
 import React from "react"
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Header } from '@/components/header';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -17,6 +17,11 @@ import { glassStyles } from '@/lib/glass-styles';
 export default function CreateDare() {
   const { isConnected } = useAccount();
   const { writeContract, isPending } = useWriteContract();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const [form, setForm] = useState({
     description: '',
@@ -114,6 +119,10 @@ export default function CreateDare() {
       setError(err.message || 'Failed to create dare');
     }
   };
+  
+  if (!mounted) {
+    return null;
+  }
 
   if (!isConnected) {
     return (

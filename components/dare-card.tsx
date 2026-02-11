@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react'; // ✅ Step 1
+import { useState, useEffect } from 'react';
 import { Dare, DareStatus, STATUS_LABELS } from '@/lib/types';
 import {
   formatAddress,
@@ -21,10 +21,6 @@ interface DareCardProps {
   isLoading?: boolean;
   onTransactionComplete?: () => void;
 }
-
-/* =======================
-   STATUS VISUAL SYSTEM
-======================= */
 
 const STATUS_UI: Record<
   number,
@@ -86,17 +82,13 @@ export function DareCard({
   const { address } = useAccount();
   const [showProofModal, setShowProofModal] = useState(false);
   const [isPending, setIsPending] = useState(false);
-
-  // ✅ Step 2
   const [currentTime, setCurrentTime] = useState<number | null>(null);
 
-  // ✅ Step 3
   useEffect(() => {
     setCurrentTime(Math.floor(Date.now() / 1000));
   }, []);
 
   const { writeContractAsync } = useWriteContract();
-
   const status = STATUS_UI[dare.status];
 
   const isCreator =
@@ -104,24 +96,20 @@ export function DareCard({
   const isAccepter =
     address && dare.accepter.toLowerCase() === address.toLowerCase();
 
+  const JUDGE_ADDRESS = "0xYOUR_JUDGE_ADDRESS_HERE".toLowerCase();
+  const isJudge =
+    address && address.toLowerCase() === JUDGE_ADDRESS;
+
   const isOpen = dare.status === DareStatus.Open;
   const isZeroAccepter =
     dare.accepter === '0x0000000000000000000000000000000000000000';
 
-  /* =======================
-     🔥 FIXED TIME LOGIC
-  ======================= */
-
   const PROOF_WINDOW = 24 * 60 * 60;
   const deadline = Math.floor(Number(dare.deadline) / 1000);
 
-  // ❌ removed old: const now = Math.floor(Date.now() / 1000);
-
-  // ✅ Step 4
   const isDeadlinePassed =
     currentTime !== null && currentTime > deadline;
 
-  // ✅ Step 5
   const canSubmitProof =
     currentTime !== null &&
     dare.status === DareStatus.Running &&
@@ -187,22 +175,6 @@ export function DareCard({
         </div>
       </div>
 
-      {/* PARTICIPANTS */}
-      <div className="grid grid-cols-2 gap-3 text-xs">
-        <div className="rounded-lg px-3 py-2" style={glassLightStyle}>
-          <p className="text-white/60">Creator</p>
-          <p className="text-white font-mono">
-            {formatAddress(dare.creator, 6)}
-          </p>
-        </div>
-        <div className="rounded-lg px-3 py-2" style={glassLightStyle}>
-          <p className="text-white/60">Accepter</p>
-          <p className="text-white font-mono">
-            {isZeroAccepter ? 'Waiting…' : formatAddress(dare.accepter, 6)}
-          </p>
-        </div>
-      </div>
-
       {/* TIMELINE */}
       <div className="grid grid-cols-2 gap-3 text-xs">
         <div className="rounded-lg px-3 py-2" style={glassLightStyle}>
@@ -221,9 +193,31 @@ export function DareCard({
         </div>
       </div>
 
+      {/* 🔥 PROOF DISPLAY */}
+      {dare.status === DareStatus.ProofSubmitted && (
+        <div
+          className="rounded-lg px-4 py-3 text-sm space-y-2"
+          style={glassLightStyle}
+        >
+          <p className="text-white/60 text-xs">Submitted Proof</p>
+
+          <a
+            href={dare.proofURI}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-[#facc15] font-mono break-all underline"
+          >
+            {dare.proofURI}
+          </a>
+
+          <p className="text-white/40 text-xs">
+            Submitted {getRelativeTime(dare.proofTime)}
+          </p>
+        </div>
+      )}
+
       {/* ACTIONS */}
       <div className="pt-4 border-t border-white/10 flex flex-wrap gap-2">
-
         {isOpen && isZeroAccepter && !isCreator && !isDeadlinePassed && (
           <button
             onClick={async () => {
@@ -245,26 +239,6 @@ export function DareCard({
           </button>
         )}
 
-        {isOpen && isZeroAccepter && isCreator && isDeadlinePassed && (
-          <button
-            onClick={async () => {
-              setIsPending(true);
-              await writeContractAsync({
-                address: DARE_CONTRACT_ADDRESS,
-                abi: DARE_CONTRACT_ABI,
-                functionName: 'expireUnacceptedDare',
-                args: [BigInt(dare.id)],
-              });
-              setIsPending(false);
-              onTransactionComplete?.();
-            }}
-            style={glassStyles.btnGold}
-            className="px-4 py-1.5 text-sm rounded-lg"
-          >
-            Reclaim Stake
-          </button>
-        )}
-
         {canSubmitProof && (
           <button
             onClick={() => setShowProofModal(true)}
@@ -273,6 +247,86 @@ export function DareCard({
           >
             Submit Proof
           </button>
+        )}
+
+        {dare.status === DareStatus.ProofSubmitted && isCreator && (
+          <>
+            <button
+              onClick={async () => {
+                setIsPending(true);
+                await writeContractAsync({
+                  address: DARE_CONTRACT_ADDRESS,
+                  abi: DARE_CONTRACT_ABI,
+                  functionName: 'confirmSuccess',
+                  args: [BigInt(dare.id)],
+                });
+                setIsPending(false);
+                onTransactionComplete?.();
+              }}
+              style={glassStyles.btnGold}
+              className="px-4 py-1.5 text-sm rounded-lg"
+            >
+              Confirm Success
+            </button>
+
+            <button
+              onClick={async () => {
+                setIsPending(true);
+                await writeContractAsync({
+                  address: DARE_CONTRACT_ADDRESS,
+                  abi: DARE_CONTRACT_ABI,
+                  functionName: 'disputeDare',
+                  args: [BigInt(dare.id)],
+                });
+                setIsPending(false);
+                onTransactionComplete?.();
+              }}
+              style={glassStyles.glassLight}
+              className="px-4 py-1.5 text-sm rounded-lg"
+            >
+              Dispute
+            </button>
+          </>
+        )}
+
+        {dare.status === DareStatus.Disputed && isJudge && (
+          <>
+            <button
+              onClick={async () => {
+                setIsPending(true);
+                await writeContractAsync({
+                  address: DARE_CONTRACT_ADDRESS,
+                  abi: DARE_CONTRACT_ABI,
+                  functionName: 'judgeResolve',
+                  args: [BigInt(dare.id), true],
+                });
+                setIsPending(false);
+                onTransactionComplete?.();
+              }}
+              style={glassStyles.glassLight}
+              className="px-4 py-1.5 text-sm rounded-lg"
+            >
+              Creator Wins
+            </button>
+
+            <button
+              onClick={async () => {
+                setIsPending(true);
+                await writeContractAsync({
+                  address: DARE_CONTRACT_ADDRESS,
+                  abi: DARE_CONTRACT_ABI,
+                  functionName: 'judgeResolve',
+                  args: [BigInt(dare.id), false],
+                });
+                setIsPending(false);
+                onTransactionComplete?.();
+              }}
+              style={glassStyles.btnGold}
+              className="px-4 py-1.5 text-sm rounded-lg"
+            >
+              Accepter Wins
+            </button>
+          </>
         )}
       </div>
 

@@ -38,12 +38,28 @@ export function ProofSubmissionModal({
   
   const { writeContractAsync } = useWriteContract();
 
-  const deadlineTime = dare.deadline;
-  const now = Date.now();
-  const timeRemaining = Math.max(0, deadlineTime - now);
-  const isDeadlinePassed = timeRemaining <= 0;
-  const daysRemaining = Math.ceil(timeRemaining / (1000 * 60 * 60 * 24));
-  const hoursRemaining = Math.ceil(timeRemaining / (1000 * 60 * 60)) % 24;
+  
+  // 🔥 FIXED: normalize deadline to milliseconds
+
+const deadlineMs =
+  Number(dare.deadline) < 10_000_000_000
+    ? Number(dare.deadline) * 1000
+    : Number(dare.deadline);
+
+const PROOF_WINDOW_MS = 24 * 60 * 60 * 1000; // 24h
+
+const now = Date.now();
+
+// submission allowed until deadline + proof window
+const proofCutoff = deadlineMs + PROOF_WINDOW_MS;
+
+const timeRemaining = Math.max(0, proofCutoff - now);
+const isDeadlinePassed = now > proofCutoff;
+
+const daysRemaining = Math.floor(timeRemaining / (1000 * 60 * 60 * 24));
+const hoursRemaining = Math.floor(
+  (timeRemaining % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)
+);
 
   const isProofComplete = () => {
     if (proofType === 'TX_HASH') return proof.length === 66 && proof.startsWith('0x');

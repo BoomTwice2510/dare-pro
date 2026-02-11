@@ -113,7 +113,7 @@ export function DareCard({
   ======================= */
 
   const PROOF_WINDOW = 24 * 60 * 60;
-  const deadline = Number(dare.deadline);
+  const deadline = Math.floor(Number(dare.deadline) / 1000);
 
   // ❌ removed old: const now = Math.floor(Date.now() / 1000);
 

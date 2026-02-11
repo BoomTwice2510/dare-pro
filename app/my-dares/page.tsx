@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Header } from '@/components/header';
 import { DareCard } from '@/components/dare-card';
 import Link from 'next/link';
@@ -12,18 +12,26 @@ export default function MyDares() {
   const { address, isConnected } = useAccount();
   const [activeTab, setActiveTab] = useState<'created' | 'accepted'>('created');
 
-  // Fetch created dares (where user is creator)
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  // 🔥 CHANGED: added refetchCreated
   const {
     filteredDares: createdDares,
     loading: createdLoading,
     hasError: createdError,
+    refetch: refetchCreated,
   } = useDares(address ? { filterCreator: address } : undefined);
 
-  // Fetch accepted dares (where user is accepter)
+  // 🔥 CHANGED: added refetchAccepted
   const {
     filteredDares: acceptedDares,
     loading: acceptedLoading,
     hasError: acceptedError,
+    refetch: refetchAccepted,
   } = useDares(address ? { filterAccepter: address } : undefined);
 
   const loading = createdLoading || acceptedLoading;
@@ -34,9 +42,14 @@ export default function MyDares() {
     console.log(`Action: ${action}, Dare: ${dareId}`);
   };
 
+  // 🔥 CHANGED: now actually refetching after tx
   const handleTransactionComplete = () => {
     console.log('[v0] Transaction completed in My Dares');
+    refetchCreated?.();
+    refetchAccepted?.();
   };
+
+  if (!mounted) return null;
 
   if (!isConnected) {
     return (
@@ -77,7 +90,6 @@ export default function MyDares() {
             </Link>
           </div>
 
-          {/* Tabs */}
           <div className="flex gap-2">
             <button
               onClick={() => setActiveTab('created')}
@@ -103,7 +115,6 @@ export default function MyDares() {
             </button>
           </div>
 
-          {/* Content */}
           {loading ? (
             <div className="text-center py-12">
               <p className="text-white/60">Loading your dares...</p>

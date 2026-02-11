@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import { Dare, DareStatus, STATUS_LABELS } from '@/lib/types';
+import { useTxLifecycle } from "@/lib/useTxLifecycle";
+import { toast } from "sonner";
 import {
   formatAddress,
   formatStake,
@@ -89,6 +91,9 @@ export function DareCard({
   }, []);
 
   const { writeContractAsync } = useWriteContract();
+  const [txHash, setTxHash] = useState<`0x${string}` | undefined>();
+useTxLifecycle(txHash, `Accept Dare #${dare.id}`);
+
   const status = STATUS_UI[dare.status];
 
   const isCreator =
@@ -219,25 +224,29 @@ export function DareCard({
       {/* ACTIONS */}
       <div className="pt-4 border-t border-white/10 flex flex-wrap gap-2">
         {isOpen && isZeroAccepter && !isCreator && !isDeadlinePassed && (
-          <button
-            onClick={async () => {
-              setIsPending(true);
-              await writeContractAsync({
-                address: DARE_CONTRACT_ADDRESS,
-                abi: DARE_CONTRACT_ABI,
-                functionName: 'acceptDare',
-                args: [BigInt(dare.id)],
-                value: isTokenETH(dare.token) ? dare.stake : undefined,
-              });
-              setIsPending(false);
-              onTransactionComplete?.();
-            }}
-            style={glassStyles.btnGold}
-            className="px-4 py-1.5 text-sm rounded-lg"
-          >
-            Accept Dare
-          </button>
-        )}
+  <button
+    onClick={async () => {
+      try {
+        const hash = await writeContractAsync({
+          address: DARE_CONTRACT_ADDRESS,
+          abi: DARE_CONTRACT_ABI,
+          functionName: 'acceptDare',
+          args: [BigInt(dare.id)],
+          value: isTokenETH(dare.token) ? dare.stake : undefined,
+        });
+
+        setTxHash(hash);
+
+      } catch (err: any) {
+        toast.error("Transaction rejected");
+      }
+    }}
+    style={glassStyles.btnGold}
+    className="px-4 py-1.5 text-sm rounded-lg"
+  >
+    Accept Dare
+  </button>
+)}
 
         {canSubmitProof && (
           <button

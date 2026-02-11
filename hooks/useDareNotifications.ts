@@ -1,45 +1,57 @@
 'use client';
 
 import { useWatchContractEvent } from 'wagmi';
+import { toast } from 'sonner';
+import { useCallback } from 'react';
 import { DARE_CONTRACT_ADDRESS, DARE_CONTRACT_ABI } from '@/lib/web3-config';
 
-export function useDareNotifications(userAddress?: string) {
-  // Dare Accepted
+export function useDareNotifications() {
+  const handleEvent = useCallback((type: string, logs: any[]) => {
+    logs.forEach((log) => {
+      const id = log.args?.id?.toString();
+
+      switch (type) {
+        case 'accepted':
+          toast.info(`Dare #${id} accepted`);
+          break;
+        case 'submitted':
+          toast.warning(`Proof submitted for Dare #${id}`);
+          break;
+        case 'resolved':
+          toast.success(`Dare #${id} resolved 🎉`);
+          break;
+        case 'cancelled':
+          toast.error(`Dare #${id} cancelled`);
+          break;
+      }
+    });
+  }, []);
+
   useWatchContractEvent({
     address: DARE_CONTRACT_ADDRESS,
     abi: DARE_CONTRACT_ABI,
     eventName: 'DareAccepted',
-    onLogs(logs) {
-      logs.forEach(log => {
-        const accepter = (log.args as any)?.accepter;
-        if (
-          accepter &&
-          userAddress &&
-          accepter.toLowerCase() === userAddress.toLowerCase()
-        ) {
-          alert('🔥 Your dare has been accepted');
-        }
-      });
-    },
+    onLogs: (logs) => handleEvent('accepted', logs),
   });
 
-  // Proof Submitted
   useWatchContractEvent({
     address: DARE_CONTRACT_ADDRESS,
     abi: DARE_CONTRACT_ABI,
     eventName: 'ProofSubmitted',
-    onLogs() {
-      alert('📸 Proof submitted successfully');
-    },
+    onLogs: (logs) => handleEvent('submitted', logs),
   });
 
-  // Dare Resolved
   useWatchContractEvent({
     address: DARE_CONTRACT_ADDRESS,
     abi: DARE_CONTRACT_ABI,
     eventName: 'DareResolved',
-    onLogs() {
-      alert('🏆 Dare resolved! Check result');
-    },
+    onLogs: (logs) => handleEvent('resolved', logs),
+  });
+
+  useWatchContractEvent({
+    address: DARE_CONTRACT_ADDRESS,
+    abi: DARE_CONTRACT_ABI,
+    eventName: 'DareCancelled',
+    onLogs: (logs) => handleEvent('cancelled', logs),
   });
 }

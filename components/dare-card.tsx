@@ -99,8 +99,22 @@ export function DareCard({
   const isZeroAccepter =
     dare.accepter === '0x0000000000000000000000000000000000000000';
 
+  /* =======================
+     🔥 FIXED TIME LOGIC
+  ======================= */
+
+  const PROOF_WINDOW = 24 * 60 * 60;
+
+  const deadline = Number(dare.deadline); // bigint → number
   const now = Math.floor(Date.now() / 1000);
-  const isDeadlinePassed = now > dare.deadline;
+
+  const isDeadlinePassed = now > deadline;
+
+  const canSubmitProof =
+    dare.status === DareStatus.Running &&
+    isAccepter &&
+    now >= deadline &&
+    now <= deadline + PROOF_WINDOW;
 
   const glassLightStyle = {
     backdropFilter: 'blur(8px)',
@@ -196,7 +210,7 @@ export function DareCard({
 
       {/* ACTIONS */}
       <div className="pt-4 border-t border-white/10 flex flex-wrap gap-2">
-        {/* ACCEPT (only before deadline) */}
+
         {isOpen && isZeroAccepter && !isCreator && !isDeadlinePassed && (
           <button
             onClick={async () => {
@@ -218,7 +232,6 @@ export function DareCard({
           </button>
         )}
 
-        {/* RECLAIM (creator + deadline passed + no accepter) */}
         {isOpen && isZeroAccepter && isCreator && isDeadlinePassed && (
           <button
             onClick={async () => {
@@ -226,11 +239,11 @@ export function DareCard({
               await writeContractAsync({
                 address: DARE_CONTRACT_ADDRESS,
                 abi: DARE_CONTRACT_ABI,
-                functionName: 'reclaimUnacceptedDare',
+                functionName: 'expireUnacceptedDare',
                 args: [BigInt(dare.id)],
               });
               setIsPending(false);
-              onTransactionComplete?.(); // optimistic refresh
+              onTransactionComplete?.();
             }}
             style={glassStyles.btnGold}
             className="px-4 py-1.5 text-sm rounded-lg"
@@ -239,29 +252,26 @@ export function DareCard({
           </button>
         )}
 
-        {/* SUBMIT PROOF */}
-{dare.status === DareStatus.Running &&
-  isAccepter &&
-  isDeadlinePassed && (
-    <button
-      onClick={() => setShowProofModal(true)}
-      style={glassStyles.btnGold}
-      className="px-4 py-1.5 text-sm rounded-lg"
-    >
-      Submit Proof
-    </button>
-)}
-</div>
+        {canSubmitProof && (
+          <button
+            onClick={() => setShowProofModal(true)}
+            style={glassStyles.btnGold}
+            className="px-4 py-1.5 text-sm rounded-lg"
+          >
+            Submit Proof
+          </button>
+        )}
+      </div>
 
-{showProofModal && (
-  <ProofSubmissionModal
-    dare={dare}
-    proofType="LINK"
-    onClose={() => setShowProofModal(false)}
-    onSubmit={() => setShowProofModal(false)}
-    onTransactionComplete={onTransactionComplete}
-  />
-)}
-</div>
-);
+      {showProofModal && (
+        <ProofSubmissionModal
+          dare={dare}
+          proofType="LINK"
+          onClose={() => setShowProofModal(false)}
+          onSubmit={() => setShowProofModal(false)}
+          onTransactionComplete={onTransactionComplete}
+        />
+      )}
+    </div>
+  );
 }

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react'; // ✅ Step 1
 import { Dare, DareStatus, STATUS_LABELS } from '@/lib/types';
 import {
   formatAddress,
@@ -86,6 +86,15 @@ export function DareCard({
   const { address } = useAccount();
   const [showProofModal, setShowProofModal] = useState(false);
   const [isPending, setIsPending] = useState(false);
+
+  // ✅ Step 2
+  const [currentTime, setCurrentTime] = useState<number | null>(null);
+
+  // ✅ Step 3
+  useEffect(() => {
+    setCurrentTime(Math.floor(Date.now() / 1000));
+  }, []);
+
   const { writeContractAsync } = useWriteContract();
 
   const status = STATUS_UI[dare.status];
@@ -104,17 +113,21 @@ export function DareCard({
   ======================= */
 
   const PROOF_WINDOW = 24 * 60 * 60;
+  const deadline = Number(dare.deadline);
 
-  const deadline = Number(dare.deadline); // bigint → number
-  const now = Math.floor(Date.now() / 1000);
+  // ❌ removed old: const now = Math.floor(Date.now() / 1000);
 
-  const isDeadlinePassed = now > deadline;
+  // ✅ Step 4
+  const isDeadlinePassed =
+    currentTime !== null && currentTime > deadline;
 
+  // ✅ Step 5
   const canSubmitProof =
+    currentTime !== null &&
     dare.status === DareStatus.Running &&
     isAccepter &&
-    now >= deadline &&
-    now <= deadline + PROOF_WINDOW;
+    currentTime >= deadline &&
+    currentTime <= deadline + PROOF_WINDOW;
 
   const glassLightStyle = {
     backdropFilter: 'blur(8px)',

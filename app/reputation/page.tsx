@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Header } from '@/components/header';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -15,6 +15,12 @@ export default function Reputation() {
   const { address } = useAccount();
   const [searchAddress, setSearchAddress] = useState('');
   const [selectedAddress, setSelectedAddress] = useState<string | null>(null);
+
+  // ✅ HYDRATION FIX (SAFE — DOES NOT BREAK HOOK ORDER)
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const checkAddress = searchAddress || selectedAddress || address;
 
@@ -46,8 +52,15 @@ export default function Reputation() {
     functionName: 'XP_WIN',
   });
 
-  const badgeNumber = badgeData ? Number(badgeData) : Badge.NONE;
-  const xpValue = xp ? Number(xp) : 0;
+  const badgeNumber =
+  badgeData !== undefined && badgeData !== null
+    ? Number(badgeData)
+    : Badge.NONE;
+
+const xpValue =
+  xp !== undefined && xp !== null
+    ? Number(xp)
+    : 0;
 
   const getBadgeColor = (badge: Badge) => {
     switch (badge) {
@@ -71,9 +84,7 @@ export default function Reputation() {
     };
 
     const next = requirements[currentBadge];
-    if (!next || next.xp === null) {
-      return null;
-    }
+    if (!next || next.xp === null) return null;
 
     return {
       badge: next.badge,
@@ -83,6 +94,9 @@ export default function Reputation() {
   };
 
   const nextBadge = getNextBadgeRequirement(badgeNumber, xpValue);
+
+  // ✅ IMPORTANT: return null AFTER hooks (does not break hook order)
+  if (!mounted) return null;
 
   return (
     <main style={{ backgroundColor: '#000000', minHeight: '100vh' }}>
@@ -111,13 +125,21 @@ export default function Reputation() {
                 {address && (
                   <div className="rounded-lg p-4" style={glassStyles.glassLight}>
                     <p className="text-white/60 text-sm mb-2">Wallet</p>
-                    <p className="text-white font-mono text-sm">{formatAddress(address)}</p>
+                    <p className="text-white font-mono text-sm">
+                      {formatAddress(address)}
+                    </p>
                   </div>
                 )}
 
-                <div className={`bg-gradient-to-br ${getBadgeColor(badgeNumber)} rounded-lg p-6 text-center`}>
+                <div
+                  className={`bg-gradient-to-br ${getBadgeColor(
+                    badgeNumber
+                  )} rounded-lg p-6 text-center`}
+                >
                   <p className="text-white/80 text-sm mb-2">Current Badge</p>
-                  <p className="text-2xl font-bold text-white">{BADGE_LABELS[badgeNumber]}</p>
+                  <p className="text-2xl font-bold text-white">
+                    {BADGE_LABELS[badgeNumber]}
+                  </p>
                 </div>
 
                 <div className="rounded-lg p-4" style={glassStyles.glassLight}>
@@ -139,15 +161,21 @@ export default function Reputation() {
                     <p className="text-white/60 text-sm mb-2">
                       Next Badge: {BADGE_LABELS[nextBadge.badge!]}
                     </p>
+
                     <div className="w-full bg-white/10 rounded-full h-2 mt-2">
                       <div
                         className="h-2 rounded-full transition-all"
                         style={{
-                          background: 'linear-gradient(to right, #d4af37, #e6c547)',
-                          width: `${Math.min((xpValue / nextBadge.xpRequired) * 100, 100)}%`,
+                          background:
+                            'linear-gradient(to right, #d4af37, #e6c547)',
+                          width: `${Math.min(
+                            (xpValue / nextBadge.xpRequired) * 100,
+                            100
+                          )}%`,
                         }}
                       />
                     </div>
+
                     <p className="text-white/60 text-xs mt-2">
                       {nextBadge.xpNeeded} XP needed ({nextBadge.xpRequired} total)
                     </p>
@@ -157,7 +185,9 @@ export default function Reputation() {
 
               {address && (
                 <Link href="/my-dares">
-                  <button style={glassStyles.btnGold} className="w-full">View Your Dares</button>
+                  <button style={glassStyles.btnGold} className="w-full">
+                    View Your Dares
+                  </button>
                 </Link>
               )}
             </div>
@@ -168,17 +198,27 @@ export default function Reputation() {
 
               <div className="space-y-4 text-sm text-white/80">
                 <div className="rounded-lg p-3" style={glassStyles.glassLight}>
-                  <p className="font-semibold text-[#d4af37] mb-1">Win a Dare</p>
-                  <p>+{Number(xpWin)} XP for successfully completing a dare</p>
+                  <p className="font-semibold text-[#d4af37] mb-1">
+                    Win a Dare
+                  </p>
+                  <p>
+                    +{Number(xpWin)} XP for successfully completing a dare
+                  </p>
                 </div>
 
                 <div className="rounded-lg p-3" style={glassStyles.glassLight}>
-                  <p className="font-semibold text-[#d4af37] mb-1">Confirmation Window</p>
-                  <p>{Number(confirmWindow) / 3600} hours to auto-resolve proofs</p>
+                  <p className="font-semibold text-[#d4af37] mb-1">
+                    Confirmation Window
+                  </p>
+                  <p>
+                    {Number(confirmWindow) / 3600} hours to auto-resolve proofs
+                  </p>
                 </div>
 
                 <div className="rounded-lg p-3" style={glassStyles.glassLight}>
-                  <p className="font-semibold text-[#d4af37] mb-1">Badge Thresholds</p>
+                  <p className="font-semibold text-[#d4af37] mb-1">
+                    Badge Thresholds
+                  </p>
                   <ul className="space-y-1 ml-2">
                     <li>🥉 Bronze: 100 XP</li>
                     <li>🥈 Silver: 500 XP</li>
@@ -191,10 +231,14 @@ export default function Reputation() {
 
           {/* Search Other Profiles */}
           <div className="rounded-2xl p-8 space-y-6" style={glassStyles.glassGold}>
-            <h2 className="text-2xl font-bold text-white">Check Other Profiles</h2>
+            <h2 className="text-2xl font-bold text-white">
+              Check Other Profiles
+            </h2>
 
             <div className="space-y-3">
-              <label className="block text-sm font-medium text-white">Wallet Address</label>
+              <label className="block text-sm font-medium text-white">
+                Wallet Address
+              </label>
               <div className="flex gap-2">
                 <Input
                   type="text"
@@ -218,12 +262,25 @@ export default function Reputation() {
               <div className="grid md:grid-cols-2 gap-4 pt-4 border-t border-white/10">
                 <div className="rounded-lg p-4" style={glassStyles.glassLight}>
                   <p className="text-white/60 text-sm mb-2">Address</p>
-                  <p className="text-white font-mono text-sm">{formatAddress(selectedAddress)}</p>
+                  <p className="text-white font-mono text-sm">
+                    {formatAddress(selectedAddress)}
+                  </p>
                 </div>
 
-                <div style={{ background: `linear-gradient(to bottom right, ${getBadgeColor(badgeNumber).split(' ')[0]} 0%, ${getBadgeColor(badgeNumber).split(' ')[1]} 100%)` }} className="rounded-lg p-4">
+                <div
+                  style={{
+                    background: `linear-gradient(to bottom right, ${
+                      getBadgeColor(badgeNumber).split(' ')[0]
+                    } 0%, ${
+                      getBadgeColor(badgeNumber).split(' ')[1]
+                    } 100%)`,
+                  }}
+                  className="rounded-lg p-4"
+                >
                   <p className="text-white/80 text-sm mb-1">Badge</p>
-                  <p className="text-lg font-bold text-white">{BADGE_LABELS[badgeNumber]}</p>
+                  <p className="text-lg font-bold text-white">
+                    {BADGE_LABELS[badgeNumber]}
+                  </p>
                 </div>
 
                 <div className="rounded-lg p-4" style={glassStyles.glassLight}>
@@ -262,36 +319,43 @@ export default function Reputation() {
               <div className="rounded-lg p-3" style={glassStyles.glassLight}>
                 <p className="font-semibold text-[#d4af37] mb-1">What is XP?</p>
                 <p>
-                  XP is your onchain reputation. It increases when you win dares, showing your
-                  commitment and honesty.
+                  XP is your onchain reputation. It increases when you win dares,
+                  showing your commitment and honesty.
                 </p>
               </div>
 
               <div className="rounded-lg p-3" style={glassStyles.glassLight}>
-                <p className="font-semibold text-[#d4af37] mb-1">Can I lose XP?</p>
+                <p className="font-semibold text-[#d4af37] mb-1">
+                  Can I lose XP?
+                </p>
                 <p>
-                  In the current version, you gain XP when you win. Future versions may penalize
-                  false claims.
+                  In the current version, you gain XP when you win. Future
+                  versions may penalize false claims.
                 </p>
               </div>
 
               <div className="rounded-lg p-3" style={glassStyles.glassLight}>
-                <p className="font-semibold text-[#d4af37] mb-1">Is XP tradeable?</p>
+                <p className="font-semibold text-[#d4af37] mb-1">
+                  Is XP tradeable?
+                </p>
                 <p>
-                  No. XP is a non-transferable reputation metric. It&apos;s tied to your address and
-                  your actions.
+                  No. XP is a non-transferable reputation metric. It&apos;s tied
+                  to your address and your actions.
                 </p>
               </div>
 
               <div className="rounded-lg p-3" style={glassStyles.glassLight}>
-                <p className="font-semibold text-[#d4af37] mb-1">What are badges for?</p>
+                <p className="font-semibold text-[#d4af37] mb-1">
+                  What are badges for?
+                </p>
                 <p>
-                  Badges are visual indicators of your reputation level. They signal trustworthiness
-                  to other users.
+                  Badges are visual indicators of your reputation level. They
+                  signal trustworthiness to other users.
                 </p>
               </div>
             </div>
           </div>
+
         </div>
       </section>
     </main>

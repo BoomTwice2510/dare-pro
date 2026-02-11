@@ -1,36 +1,26 @@
 'use client';
 
-import React from "react";
-
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Header } from '@/components/header';
-import { Input } from '@/components/ui/input';
 import Link from 'next/link';
 import { useAccount, useReadContract, useWriteContract } from 'wagmi';
 import { formatAddress } from '@/lib/utils-dare';
 import { DARE_CONTRACT_ADDRESS, DARE_CONTRACT_ABI } from '@/lib/web3-config';
 import { glassStyles } from '@/lib/glass-styles';
+import { useDares } from '@/hooks/useDares';
+import { DareStatus } from '@/lib/types';
 
 export default function JudgePanel() {
   const { address, isConnected } = useAccount();
-  const { writeContract, isPending } = useWriteContract();
+  const { writeContractAsync } = useWriteContract();
 
-  /* --------------------
-     HYDRATION FIX
-  -------------------- */
   const [mounted, setMounted] = useState(false);
+  const [txError, setTxError] = useState('');
+  const [txSuccess, setTxSuccess] = useState('');
 
   useEffect(() => {
     setMounted(true);
   }, []);
-
-  /* --------------------
-     FORM STATE
-  -------------------- */
-  const [dareId, setDareId] = useState('');
-  const [winner, setWinner] = useState('');
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
 
   /* --------------------
      CONTRACT READS
@@ -47,10 +37,17 @@ export default function JudgePanel() {
     functionName: 'treasury',
   });
 
-  const { data: protocolFeeBps } = useReadContract({
+  const { data: feeBps } = useReadContract({
     address: DARE_CONTRACT_ADDRESS,
     abi: DARE_CONTRACT_ABI,
-    functionName: 'protocolFeeBps',
+    functionName: 'WIN_FEE_BPS',
+  });
+
+  /* --------------------
+     FETCH DISPUTED DARES
+  -------------------- */
+  const { filteredDares } = useDares({
+    filterStatus: DareStatus.Disputed,
   });
 
   const isJudge =
@@ -58,12 +55,7 @@ export default function JudgePanel() {
     judge &&
     address.toLowerCase() === (judge as string).toLowerCase();
 
-  /* --------------------
-     EARLY RETURNS (ORDER MATTERS)
-  -------------------- */
-  if (!mounted) {
-    return null;
-  }
+  if (!mounted) return null;
 
   if (!isConnected) {
     return (
@@ -72,9 +64,6 @@ export default function JudgePanel() {
         <section className="pt-32 px-4 text-center">
           <div className="rounded-2xl p-8 max-w-md mx-auto" style={glassStyles.glass}>
             <h1 className="text-2xl font-bold text-white mb-4">Connect Wallet</h1>
-            <p className="text-white/60 mb-6">
-              You must connect your wallet to access judge panel.
-            </p>
             <Link href="/landing">
               <button style={glassStyles.btnGold} className="w-full">
                 Go Back Home
@@ -96,12 +85,6 @@ export default function JudgePanel() {
             <p className="text-white/60 mb-4">
               Only the protocol judge can access this panel.
             </p>
-            <div className="rounded-lg p-4 text-left text-sm mb-6" style={glassStyles.glassLight}>
-              <p className="text-white/60 mb-2">Current Judge:</p>
-              <p className="text-white font-mono">
-                {judge ? formatAddress(judge as string) : 'Unknown'}
-              </p>
-            </div>
             <Link href="/landing">
               <button style={glassStyles.btnGold} className="w-full">
                 Go Back Home
@@ -114,47 +97,26 @@ export default function JudgePanel() {
   }
 
   /* --------------------
-     ACTION HANDLER
+     RESOLVE FUNCTION
   -------------------- */
-  const handleResolve = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError('');
-    setSuccess('');
-
-    if (!dareId || !winner) {
-      setError('Please fill in all fields');
-      return;
-    }
+  const resolveDare = async (id: number, creatorWins: boolean) => {
+    setTxError('');
+    setTxSuccess('');
 
     try {
-      writeContract(
-        {
-          address: DARE_CONTRACT_ADDRESS,
-          abi: DARE_CONTRACT_ABI,
-          functionName: 'judgeResolve',
-          args: [BigInt(dareId), winner as `0x${string}`],
-        },
-        {
-          onSuccess: () => {
-            setSuccess(
-              `Dare #${dareId} resolved with winner: ${formatAddress(winner)}`
-            );
-            setDareId('');
-            setWinner('');
-          },
-          onError: (err) => {
-            setError(err.message || 'Failed to resolve dare');
-          },
-        }
-      );
+      await writeContractAsync({
+        address: DARE_CONTRACT_ADDRESS,
+        abi: DARE_CONTRACT_ABI,
+        functionName: 'judgeResolve',
+        args: [BigInt(id), creatorWins],
+      });
+
+      setTxSuccess(`Dare #${id} resolved successfully`);
     } catch (err: any) {
-      setError(err.message || 'Failed to resolve dare');
+      setTxError(err.message || 'Transaction failed');
     }
   };
 
-  /* --------------------
-     MAIN PANEL
-  -------------------- */
   return (
     <main style={{ backgroundColor: '#000000', minHeight: '100vh' }}>
       <Header />
@@ -196,66 +158,127 @@ export default function JudgePanel() {
             <div className="rounded-2xl p-6" style={glassStyles.glassLight}>
               <p className="text-white/60 text-sm mb-2">Protocol Fee</p>
               <p className="text-[#d4af37] font-bold text-lg">
-                {Number(protocolFeeBps) / 100}%
+                {Number(feeBps) / 100}%
               </p>
             </div>
           </div>
 
-          {/* Resolve Form */}
+          {/* DISPUTED DARES */}
           <div className="rounded-2xl p-8 space-y-6" style={glassStyles.glassGold}>
             <h2 className="text-2xl font-bold text-white">
-              Resolve Disputed Dare
+              Disputed Dares
             </h2>
 
-            <form onSubmit={handleResolve} className="space-y-4">
-              <div className="space-y-2">
-                <label className="block text-sm font-medium text-white">
-                  Dare ID
-                </label>
-                <Input
-                  type="number"
-                  min="0"
-                  value={dareId}
-                  onChange={(e) => setDareId(e.target.value)}
-                  style={glassStyles.glassLight}
-                  className="rounded-lg p-3 text-white"
-                />
-              </div>
+            {filteredDares.length === 0 && (
+              <p className="text-white/60">
+                No disputed dares right now.
+              </p>
+            )}
 
-              <div className="space-y-2">
-                <label className="block text-sm font-medium text-white">
-                  Winner Address
-                </label>
-                <Input
-                  type="text"
-                  value={winner}
-                  onChange={(e) => setWinner(e.target.value)}
-                  style={glassStyles.glassLight}
-                  className="rounded-lg p-3 text-white"
-                />
-              </div>
-
-              {error && (
-                <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/30 text-red-300 text-sm">
-                  {error}
-                </div>
-              )}
-
-              {success && (
-                <div className="p-3 rounded-lg bg-green-500/10 border border-green-500/30 text-green-300 text-sm">
-                  ✓ {success}
-                </div>
-              )}
-
-              <button
-                type="submit"
-                disabled={isPending}
-                style={glassStyles.btnGold}
-                className="w-full py-3 text-lg"
+            {filteredDares.map((dare) => (
+              <div
+                key={dare.id}
+                className="rounded-xl p-6 border border-yellow-500/20 space-y-3"
+                style={glassStyles.glassLight}
               >
-                {isPending ? 'Resolving...' : 'Resolve Dare'}
-              </button>
-            </form>
+                <div className="flex justify-between">
+                  <span className="text-yellow-400 font-semibold">
+                    Dare #{dare.id}
+                  </span>
+                  <span className="text-red-400 text-sm">
+                    Disputed
+                  </span>
+                </div>
+
+                <p className="text-white">{dare.description}</p>
+
+                <div className="text-sm text-white/70 space-y-1">
+                <div className="mt-3 text-xs text-white/60 space-y-1">
+  <div>
+    Created: {new Date(dare.createdAt).toLocaleString()}
+  </div>
+
+  <div>
+    Deadline: {new Date(dare.deadline).toLocaleString()}
+  </div>
+
+  {dare.proofTime > 0 && (
+    <div>
+      Proof Submitted: {new Date(dare.proofTime).toLocaleString()}
+    </div>
+  )}
+
+  {dare.disputeTime > 0 && (
+    <div>
+      Disputed: {new Date(dare.disputeTime).toLocaleString()}
+    </div>
+  )}
+
+  {dare.disputeTime > 0 && (
+    <div className="text-yellow-400 font-semibold">
+      Judge Window Left:{' '}
+      {Math.max(
+        0,
+        72 * 60 * 60 * 1000 -
+          (Date.now() - dare.disputeTime)
+      ) / (1000 * 60 * 60) > 0
+        ? `${Math.floor(
+            (72 * 60 * 60 * 1000 -
+              (Date.now() - dare.disputeTime)) /
+              (1000 * 60 * 60)
+          )}h left`
+        : 'Expired'}
+    </div>
+  )}
+</div>
+
+                  <div>Creator: {formatAddress(dare.creator)}</div>
+                  <div>Accepter: {formatAddress(dare.accepter)}</div>
+                  <div>Stake: {dare.stake.toString()}</div>
+                  {dare.proofURI && (
+                    <div>
+                      Proof:{' '}
+                      <a
+                        href={dare.proofURI}
+                        target="_blank"
+                        className="text-blue-400 underline"
+                      >
+                        View
+                      </a>
+                    </div>
+                  )}
+                </div>
+
+                <div className="flex gap-4 pt-4">
+                  <button
+                    onClick={() => resolveDare(dare.id, true)}
+                    style={glassStyles.btnGold}
+                    className="flex-1"
+                  >
+                    Creator Wins
+                  </button>
+
+                  <button
+                    onClick={() => resolveDare(dare.id, false)}
+                    className="flex-1 bg-green-600 text-white rounded-lg py-2"
+                  >
+                    Accepter Wins
+                  </button>
+                </div>
+              </div>
+            ))}
+
+            {txError && (
+              <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/30 text-red-300 text-sm">
+                {txError}
+              </div>
+            )}
+
+            {txSuccess && (
+              <div className="p-3 rounded-lg bg-green-500/10 border border-green-500/30 text-green-300 text-sm">
+                ✓ {txSuccess}
+              </div>
+            )}
           </div>
         </div>
       </section>

@@ -37,11 +37,21 @@ export default function LandingPage() {
             <p className="text-white/70 text-lg">Ready to stake your commitment?</p>
           </div>
 
-          {/* Go to Dares Button */}
-          <div className="flex justify-center">
+          {/* Navigation Buttons */}
+          <div className="flex flex-wrap justify-center gap-4">
             <Link href="/dares">
-              <button style={glassStyles.btnGold} className="px-12 py-4 text-xl font-bold hover:shadow-2xl transition-all">
+              <button style={glassStyles.btnGold} className="px-8 py-3 text-lg font-bold hover:shadow-2xl transition-all">
                 Go to Dares
+              </button>
+            </Link>
+            <Link href="/arena">
+              <button style={glassStyles.btnGold} className="px-8 py-3 text-lg font-bold hover:shadow-2xl transition-all">
+                Public Arena
+              </button>
+            </Link>
+            <Link href="/leaderboard">
+              <button style={glassStyles.btnGold} className="px-8 py-3 text-lg font-bold hover:shadow-2xl transition-all">
+                Leaderboard
               </button>
             </Link>
           </div>

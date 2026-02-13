@@ -54,6 +54,11 @@ export default function LandingPage() {
                 Leaderboard
               </button>
             </Link>
+            <Link href="/components-showcase">
+              <button style={glassStyles.btnGold} className="px-8 py-3 text-lg font-bold hover:shadow-2xl transition-all">
+                View All Components
+              </button>
+            </Link>
           </div>
 
           {/* Features Grid Section */}

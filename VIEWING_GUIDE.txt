@@ -1,0 +1,250 @@
+╔════════════════════════════════════════════════════════════════════════════════╗
+║              DARE PROTOCOL - NEW COMPONENTS & PAGES VIEWING GUIDE               ║
+╚════════════════════════════════════════════════════════════════════════════════╝
+
+📌 QUICK ACCESS - START HERE
+═══════════════════════════════════════════════════════════════════════════════
+
+To see ALL new components working together RIGHT NOW:
+
+1. In v0 preview (top right box)
+2. Navigate to: /components-showcase
+3. See everything displayed with explanations
+
+OR click "View All Components" button on landing page (/landing)
+
+
+📍 NAVIGATION MAP
+═══════════════════════════════════════════════════════════════════════════════
+
+LANDING PAGE (/landing or /)
+├── "Go to Dares" → /dares (existing page)
+├── "Public Arena" → /arena ⭐ NEW
+├── "Leaderboard" → /leaderboard ⭐ NEW
+└── "View All Components" → /components-showcase ⭐ NEW SHOWCASE
+
+
+📺 COMPONENT SHOWCASE PAGE (/components-showcase)
+═══════════════════════════════════════════════════════════════════════════════
+
+This page displays:
+
+1. SHAREABLE DARE CARD
+   ├─ Twitter-optimized 1200x630 card
+   ├─ Shows dare details + stake + deadline
+   ├─ "Share to X" button
+   └─ Glassmorphism design
+
+2. XP UTILITY DISPLAY (2 examples)
+   ├─ Current XP: 2,450 → Tier: Gold
+   ├─ Shows fee discount %
+   ├─ Progress bar to next tier
+   └─ Tier benefits list
+
+3. LIVE ACTIVITY FEED
+   ├─ Real-time activity stream
+   ├─ Color-coded badges
+   ├─ Auto-updating every 3 seconds
+   └─ Shortened wallet addresses
+
+4. LIVE DARE EVENTS HOOK
+   ├─ Shows current event count
+   ├─ Lists all events with timestamps
+   ├─ Auto-updates from hook
+   └─ Max 20 entries (oldest removed)
+
+5. FULL PAGES
+   ├─ Public Arena
+   ├─ Leaderboard
+   └─ User Profile
+
+
+🎯 VIEWING EACH COMPONENT
+═══════════════════════════════════════════════════════════════════════════════
+
+OPTION 1: See All Together
+→ Visit /components-showcase (RECOMMENDED FOR FIRST TIME)
+
+OPTION 2: View Individual Pages
+
+  A. PUBLIC ARENA PAGE (/arena)
+     ├─ Browse all active dares
+     ├─ Filter by: Highest Stake, Ending Soon, Newest
+     ├─ Dare cards with countdown timers
+     ├─ Stat cards showing metrics
+     └─ 8 sample dares included
+
+  B. LEADERBOARD PAGE (/leaderboard)
+     ├─ 4 sorting tabs: Top Earners, Win Rate, Most Active, Risk Takers
+     ├─ Medals for top 3 (🥇🥈🥉)
+     ├─ Desktop table view or mobile card view
+     ├─ Win rate progress bars
+     └─ 10+ sample users included
+
+  C. USER PROFILE PAGE (/profile/[address])
+     ├─ Dynamic routing: /profile/0x742d35Cc6634C0532925a3b844Bc9e7595f42e03
+     ├─ User stats (XP, Win Rate, Earnings, Rage Quits)
+     ├─ Dispute summary
+     ├─ 3 tabs: Active Dares, Past Dares, Disputes
+     └─ 8+ dare history records
+
+
+📂 COMPONENT LOCATIONS
+═══════════════════════════════════════════════════════════════════════════════
+
+Pages:
+  • app/arena/page.tsx
+  • app/leaderboard/page.tsx
+  • app/profile/[address]/page.tsx
+  • app/components-showcase/page.tsx
+
+Components:
+  • components/shareable-dare-card.tsx
+  • components/xp-utility-display.tsx
+  • components/live-activity-feed.tsx
+
+Hooks:
+  • hooks/use-live-dare-events.ts
+
+Documentation:
+  • COMPONENTS_GUIDE.md (detailed reference)
+  • QUICK_START.md (quick reference)
+  • DEPLOYMENT_CHECKLIST.md (deployment status)
+  • VIEWING_GUIDE.txt (this file)
+
+
+🔄 LIVE UPDATES & INTERACTIVITY
+═══════════════════════════════════════════════════════════════════════════════
+
+LiveActivityFeed:
+  ✓ Updates every 5 seconds by default
+  ✓ Auto-scrolls to top when new items arrive
+  ✓ Shows "New items" counter
+  ✓ Color-coded badges (Blue/Green/Red/Yellow)
+
+useLiveDareEvents Hook:
+  ✓ Updates every 3 seconds
+  ✓ Maintains max 20 events
+  ✓ Random event type generation
+  ✓ Realistic wallet addresses
+
+ShareableDareCard:
+  ✓ "Share to X" button opens Twitter share dialog
+  ✓ Pre-fills tweet with dare details
+  ✓ Includes dare URL
+
+XPUtilityDisplay:
+  ✓ Shows current tier based on XP
+  ✓ Calculates fee discount (0%, 5%, 15%, 25%)
+  ✓ Animated progress bar to next tier
+
+
+✨ FEATURES AT A GLANCE
+═══════════════════════════════════════════════════════════════════════════════
+
+✓ 8 New Features Total
+  ├─ 3 Pages (Arena, Leaderboard, Profile)
+  ├─ 3 Components (Card, Display, Feed)
+  ├─ 1 Hook (Live Events)
+  └─ 1 Showcase (Demo Page)
+
+✓ Production Quality
+  ├─ Full TypeScript typing
+  ├─ Responsive design
+  ├─ Glassmorphism styling
+  ├─ Dark theme optimized
+  └─ Accessible HTML
+
+✓ Ready to Deploy
+  ├─ All files created
+  ├─ All imports working
+  ├─ No broken links
+  ├─ All tested in preview
+  └─ Documentation complete
+
+
+🚀 DEPLOYMENT WHEN READY
+═══════════════════════════════════════════════════════════════════════════════
+
+Step 1: View in Preview
+  → Navigate to /components-showcase
+  → Verify all components work
+
+Step 2: Push to GitHub
+  → Click GitHub icon in v0 sidebar
+  → Click "Publish changes"
+  → Wait for sync
+
+Step 3: Vercel Auto-Deploy
+  → Vercel rebuilds automatically
+  → Deploy completes in 2-5 minutes
+
+Step 4: Verify Live
+  → Visit https://dare-pro.vercel.app/components-showcase
+  → Check all pages load
+  → All components visible
+
+
+📋 CHECKLIST FOR VIEWING
+═══════════════════════════════════════════════════════════════════════════════
+
+In v0 Preview:
+  ☐ Visit /landing
+  ☐ Click "View All Components" button
+  ☐ See showcase page with all components
+  ☐ Click to view individual pages
+  ☐ Watch live updates working
+
+Or Directly:
+  ☐ /arena - See dare browsing page
+  ☐ /leaderboard - See competitive rankings
+  ☐ /profile/0x742d... - See user profile
+  ☐ /components-showcase - See everything together
+
+
+💡 TIPS & TRICKS
+═══════════════════════════════════════════════════════════════════════════════
+
+• Hard refresh if styles don't load: Ctrl+Shift+R (Cmd+Shift+R on Mac)
+• Open DevTools (F12) to see console logs
+• Resize browser to test responsive design
+• Check mobile view with device toggle
+• Live feed updates automatically - watch for new entries
+• Dare timers countdown in real-time
+• Leaderboard sorting recalculates data dynamically
+
+
+🎨 DESIGN SYSTEM
+═══════════════════════════════════════════════════════════════════════════════
+
+All components use:
+  • Primary Gold: #d4af37
+  • Gradient: #e6c547
+  • Background: #000000 (black)
+  • Glass Effect: Semi-transparent + blur
+  • Font: Bold headers, clean body text
+  • Layout: Flexbox + Tailwind utilities
+
+
+📞 NEED HELP?
+═══════════════════════════════════════════════════════════════════════════════
+
+1. Check QUICK_START.md for fast reference
+2. Check COMPONENTS_GUIDE.md for detailed info
+3. Check DEPLOYMENT_CHECKLIST.md for deployment status
+4. Look at file content directly for implementation details
+
+
+✅ STATUS: ALL COMPONENTS READY TO VIEW
+═══════════════════════════════════════════════════════════════════════════════
+
+Everything is built and working in the v0 preview.
+Just navigate to the pages and see them in action!
+
+START: /components-showcase ⭐
+
+
+═══════════════════════════════════════════════════════════════════════════════
+Last Updated: 2026-02-13
+Status: READY FOR VIEWING AND DEPLOYMENT
+═══════════════════════════════════════════════════════════════════════════════
